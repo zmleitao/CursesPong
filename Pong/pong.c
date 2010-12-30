@@ -10,6 +10,7 @@
 #define BUMPER_SIZE 3
 #define BUMP_CH "|"
 
+/*zml was here*/
 char *string[5] = {".---.  .--. .-..-. .--.", ": .; :: ,. :: `: :: .--'", ":  _.': :: :: .` :: : _ ", ": :   : :; :: :. :: :; :", ":_;   `.__.':_;:_;`.__.'"};
 
 int win_height,win_width,win_y,win_x; //size of game window and starting coordinates
