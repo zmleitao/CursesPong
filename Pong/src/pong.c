@@ -8,94 +8,14 @@
 #include "window.h"
 #include "items.h"
 #define SPEED 80000
-#define BUMPER_SIZE 3
-#define BUMP_CH "|"
 
 
-int bumpers_y[2]; //current positions of each bumper
 
 int end = 0;
 
 
+pthread_mutex_t mux_char = PTHREAD_MUTEX_INITIALIZER;
 
-
-/*Tests collision with each wall; In case of collision, 1 is returned*/
-int test_collision(ball_t *ball){
-	
-	if((ball->pos).x == 0 && (ball->pos).y == 0){
-		(ball->dir).x = (-1)*(ball->dir).x; //inverts direction
-		(ball->dir).y = (-1)*(ball->dir).y;
-		return 1;
-	}
-	else if((ball->pos).x == 0 && (ball->pos).y != 0){
-		(ball->dir).x = (-1)*(ball->dir).x; //inverts x direction
-		return 1;
-	}
-	else if((ball->pos).x != 0 && (ball->pos).y == 0){
-				(ball->dir).y = (-1)*(ball->dir).y; //inverts y direction
-				return 1;
-	}
-	else if((ball->pos).x == win_width -1 && (ball->pos).y == 0){
-		(ball->dir).x = (-1)*(ball->dir).x; //inverts direction
-		(ball->dir).y = (-1)*(ball->dir).y;
-		return 1;
-	}
-	else if((ball->pos).x == win_width -1 && (ball->pos).y != 0){
-		(ball->dir).x = (-1)*(ball->dir).x; //inverts x direction
-		return 1;
-	}
-	else if((ball->pos).x == win_width -1 && (ball->pos).y == win_height -1){
-		(ball->dir).x = (-1)*(ball->dir).x; //inverts direction
-		(ball->dir).y = (-1)*(ball->dir).y;
-		return 1;
-	}
-	else if((ball->pos).x != 0 && (ball->pos).y == win_height -1){
-		(ball->dir).y = (-1)*(ball->dir).y; //inverts y direction
-		return 1;
-	}
-	else if((ball->pos).x == 0 && (ball->pos).y == win_height -1){
-		(ball->dir).x = (-1)*(ball->dir).x; //inverts direction
-		(ball->dir).y = (-1)*(ball->dir).y;
-		return 1;
-	}
-	return 0;
-}
-
-
-/*draws a bumper in the given position*/
-void draw_bumper(WINDOW *bump_window, int starty, int startx){
-	int i;
-	
-	for(i=0;i<BUMPER_SIZE;i++){
-		mvwprintw(bump_window,starty + i,startx,BUMP_CH);
-	}
-	WinRefresh(bump_window);
-}
-
-/*moves the bumper to the specified position*/
-void move_bumper(WINDOW *bump_window, int bumper_num, int dir){
-	int i;
-	
-	if(dir){
-		//bumper is moving up
-		if(bumpers_y[bumper_num] != 0){ //window limit reached 
-			mvwprintw(bump_window,bumpers_y[bumper_num] + BUMPER_SIZE -1,0," "); //erases trailing character
-			mvwprintw(bump_window,bumpers_y[bumper_num] - 1,0,BUMP_CH); //prints character in the new position
-			bumpers_y[bumper_num]--; //updates starting position
-		}
-	}
-	else{
-		//bumper is moving down
-		if(bumpers_y[bumper_num] != win_height - 2 - BUMPER_SIZE){ 
-			mvwprintw(bump_window,bumpers_y[bumper_num],0," "); //erases trailing character
-			mvwprintw(bump_window,bumpers_y[bumper_num] + BUMPER_SIZE,0,BUMP_CH); //prints character in the new position
-			bumpers_y[bumper_num]++;
-		}
-	}
-	
-
-	WinRefresh(bump_window);
-}
 
 void *player(void *arg){
 	int player_num;
@@ -108,28 +28,30 @@ void *player(void *arg){
 	noecho(); //disables echoing of characters
 	
 	
-	player_num = *(int*)arg; //retrieves player number (1 or 2);
-	
-	if(player_num == 1){
+	player_num = *(int*)arg; //retrieves player number (0 or 1);
+
+	if(player_num == 0){
 		x_pos = win_x + win_width -2; //x coordinate
 		bumper_win = create_newwin(win_height-2,1,win_y+1,x_pos,FALSE); //creates bumper window for player 1
 		bumpers_y[0] = win_height/2; //initial bumper position
 	}
-	else if(player_num == 2){
+	else if(player_num == 1){
 				x_pos = win_x + 1; //x coordinate
-				bumper_win = create_newwin(win_height-2,1,win_y+1,win_x,FALSE); //creates bumper window for player 2
+				bumper_win = create_newwin(win_height-2,1,win_y+1,win_x+1,FALSE); //creates bumper window for player 2
 				bumpers_y[1] = win_height/2;
 	}
 	
 	draw_bumper(bumper_win,win_height/2,0); //draws bumper in the middle of the game window
 	
+
 	while(1){
+	//	printf("Player %d",player_num);
+		pthread_mutex_lock(&mux_char);
 		ch = getch();
-		
 		if(ch == 'q')//exit game
 			break;
 		
-		if(player_num == 1){
+		if(player_num == 0){
 			switch(ch){
 				case KEY_UP:
 					move_bumper(bumper_win,0,1); //moves bumper up
@@ -138,26 +60,26 @@ void *player(void *arg){
 					move_bumper(bumper_win,0,0); //moves bumper down
 					break;	
 			}
+			pthread_mutex_unlock(&mux_char);
 		}
-		if(player_num == 2)
-		{
-			switch(ch)
-			{
-				case 'W':
-					move_bumper(bumper_win,1,--bumpers_y[1]); //moves bumper up
+		else{
+			switch(ch){
+				case 'w':
+					move_bumper(bumper_win,1,1); //moves bumper up
 					break;
-				case 'S':
-					move_bumper(bumper_win,1,++bumpers_y[1]); //moves bumper down
+				case 's':
+					move_bumper(bumper_win,1,0); //moves bumper down
 					break;	
 			}
+			pthread_mutex_unlock(&mux_char);
 		}
+
 	}
 	
 	delwin(bumper_win); //deallocates window
 	raise(SIGUSR1);
 	
 }
-
 void close_game(){
 	end = 1; //terminates game
 }
@@ -165,10 +87,12 @@ void close_game(){
 int main(int argc, char **argv){
 
 	WINDOW  *game_win;
-	int player_num = 1;
+	int *player_num ;
+	int i;
 	ball_t ball;
 	unsigned int t_inter;
 	pthread_t tid;
+
 
 
 
@@ -188,12 +112,21 @@ int main(int argc, char **argv){
 	
 	signal(SIGUSR1,close_game);
 	
-	/*creates player thread*/
-	if(pthread_create(&tid,NULL,player,(void *)&player_num) != 0){
-		fprintf(stderr,"Thread initialization failed\n");
-		endwin();
-		exit(-1);
+	for(i=0;i<2; i++){ //creates player threads
+		pthread_mutex_init(&mux_bumper[i],NULL); //initializes mutex
+	
+		player_num = (int*)malloc(sizeof(int));
+		if(player_num == NULL)
+			exit(-1);
+			
+		*player_num = i;
+		if(pthread_create(&tid,NULL,player,(void *)player_num) != 0){
+			fprintf(stderr,"Thread initialization failed\n");
+			endwin();
+			exit(-1);
+		}
 	}
+	
 	
 	while(!end){
 		
@@ -202,7 +135,9 @@ int main(int argc, char **argv){
 		usleep(ball.speed);
 	}
 	
+	
 
+	
 	endwin(); //end ncurses
 	
 	return 0;

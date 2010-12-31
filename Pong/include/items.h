@@ -2,7 +2,7 @@
 #define _ITEMS_H_
 
 #include <ncurses.h>
-
+#include <pthread.h>
 #define POSX 10 //initial position x
 #define POSY 15 //initial position y
 #define DIRX -1 //initial direction x
@@ -20,6 +20,10 @@ typedef struct ball{
 	position dir; //direction in which the ball is moving
 	position pos;
 }ball_t;
+
+int bumpers_y[2]; //current positions of each bumper
+
+pthread_mutex_t mux_bumper[2];
 
 
 void new_ball(ball_t *ball, unsigned int speed,WINDOW *game_win);
