@@ -1,5 +1,6 @@
 #include "window.h"
 
+pthread_mutex_t lock;
 /*zml was here*/
 char *string[5] = {".---.  .--. .-..-. .--.", ": .; :: ,. :: `: :: .--'", ":  _.': :: :: .` :: : _ ", ": :   : :; :: :. :: :; :", ":_;   `.__.':_;:_;`.__.'"};
 
@@ -15,11 +16,12 @@ void print_middle(WINDOW *win,int starty,int startx,char *s){
 	mvwprintw(win,starty,startx,"%s",s);
 }
 
-WINDOW * WindowInit(){
+void WindowInit(){
 	
-	WINDOW *win;
+//	WINDOW *win;
 	int x,y,i;
 	
+	pthread_mutex_init(&lock,NULL);
 	win = initscr(); //start ncurses
 	cbreak(); //line buffering disabled
 
@@ -53,7 +55,7 @@ WINDOW * WindowInit(){
 	y = y+4;
 	print_middle(win,y,x,"Press any key to continue...");
 	
-	return win;
+	
 }
 
 /*Creates new window with or without borders*/
@@ -69,6 +71,7 @@ WINDOW *create_newwin(int height, int width, int starty, int startx, bool border
 	return local_win;
 }
 
+/*Creates new window with borders to the game*/
 WINDOW * GameWindowInit()
 {	
 	float temp;
@@ -84,3 +87,13 @@ WINDOW * GameWindowInit()
 	return create_newwin(win_height,win_width,win_y,win_x,TRUE); //creates game window
 
 }
+/*Refresh the requeste window and the main window*/
+void WinRefresh(WINDOW *local_win)
+{		
+		pthread_mutex_lock(&lock);
+		mvwprintw(win,0,0," ");
+		wrefresh(local_win);
+		wrefresh(win);
+		pthread_mutex_unlock(&lock);
+}
+
