@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <math.h>
 #include <pthread.h>
+#include <math.h>
 #include <signal.h>
 #include "window.h"
 
@@ -12,7 +12,7 @@
 #define BUMP_CH "|"
 
 
-int win_height,win_width,win_y,win_x; //size of game window and starting coordinates
+//win_y,win_x; //size of game window and starting coordinates
 
 int bumpers_y[2]; //current positions of each bumper
 
@@ -28,18 +28,6 @@ typedef struct {
 
 
 
-/*Creates new window with or without borders*/
-WINDOW *create_newwin(int height, int width, int starty, int startx, int border){
-	WINDOW *local_win;
-	
-	local_win = newwin(height,width,starty,startx);
-	if(border)
-		box(local_win,0,0);
-		
-	wrefresh(local_win);
-	
-	return local_win;
-}
 
 /*Creates new ball*/
 void new_ball(ball_t *ball, unsigned int speed, position dir, position pos){
@@ -220,17 +208,11 @@ int main(int argc, char **argv){
 	
 	refresh();// refresh window
 	getch();
-	
-	temp = LINES*0.8; //window will take 80% of the terminal size
-	win_height = floor(temp);
-	temp = COLS*0.8;
-	win_width = floor(temp);
-	
-	win_x = ceil((COLS - win_width)/2);
-	win_y = ceil((LINES - win_height)/2);
+
+		game_win=GameWindowInit();
 	
 	
-	game_win = create_newwin(win_height,win_width,win_y,win_x,TRUE); //creates game window
+	//	game_win = GameWindowInit();
 	
 	mvwprintw(win,LINES-1,0,"Press 'q' to Exit      "); //changes bottom message
 	

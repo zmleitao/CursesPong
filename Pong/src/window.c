@@ -55,3 +55,32 @@ WINDOW * WindowInit(){
 	
 	return win;
 }
+
+/*Creates new window with or without borders*/
+WINDOW *create_newwin(int height, int width, int starty, int startx, bool border){
+	WINDOW *local_win;
+	
+	local_win = newwin(height,width,starty,startx);
+	if(border)
+		box(local_win,0,0);
+		
+	wrefresh(local_win);
+	
+	return local_win;
+}
+
+WINDOW * GameWindowInit()
+{	
+	float temp;
+	
+	temp = LINES*0.8; //window will take 80% of the terminal size
+	win_height = floor(temp);
+	temp = COLS*0.8;
+	win_width = floor(temp);
+	
+	win_x = ceil((COLS - win_width)/2);
+	win_y = ceil((LINES - win_height)/2);
+	
+	return create_newwin(win_height,win_width,win_y,win_x,TRUE); //creates game window
+
+}
